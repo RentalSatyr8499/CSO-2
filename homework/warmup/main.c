@@ -4,22 +4,28 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-    char *sep = (char*)malloc(2);
+    char *sep;
     if (argc == 1){
-        sep[0] = '\t';
+        sep = (char*)malloc(3);
+        sep[0] = ' ';
+        sep[1] = '\t';
+        sep[2] = '\0';
     } else {
+        sep = malloc(1);
+        sep[0] = '\0';
         for (int i = 1; i < argc; i++){
-            sep = realloc(sep, strlen(argv[i])*sizeof(char));
+            sep = realloc(sep, strlen(sep) + strlen(argv[i])*sizeof(char) + 1);
             strcat(sep, argv[i]);
         }
     }
-    sep[strlen(sep)-1] = '\0';
     
     char input[5000];
     char **words;
     int n;
     while (1){
-        scanf("%s", input);
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = '\0';
+        
         if (strcmp(input, ".") == 0){
             break;
         }
@@ -27,12 +33,14 @@ int main(int argc, char *argv[]) {
         words = string_split(input, sep, &n);
 
         printf("[");
-        for (int i = 0; i < n; i++){
+        for (int i = 0; i < n-1; i++){
             printf("%s][", words[i]);
             free(words[i]);
         }
-        printf("]\n");
+        printf("%s]\n", words[n-1]);
+        free(words[n-1]);
         free(words);
     }
+    free(sep);
     return 0;
 }
