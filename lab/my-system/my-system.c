@@ -1,25 +1,19 @@
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 int my_system(const char *command){
-    *nCommands = 0;
-    **commands = splitby(command, ";", nCommands);
-    for (int i = 0; i < nCommands; i++){
-        **args = splitby(command[i], " "); 
-        add '\0' to args
-        execve(args[0], args);
+    pid_t p = fork();
+    if (p == 0){
+        execl(
+            "/bin/sh", // executable path
+            "sh", // first arg
+            "-c", // flag for command string
+            command, 
+            (char *)NULL // terminator
+        );
     }
-    return 
-}
-
-
-
-splitby(string, delimiter, *n){
-    int i = 0;
-    char **splitStr;
-    *n = 0
-    while (string[i] != '\0'){
-        nextStr = strcspn(string[i], delimiter);
-        malloc space for nextStr
-        splitStr.append(nextStr)
-        *n += 1
-    }
-    return splitStr
-}
+    int status;
+    waitpid(p, &status, 0);
+    return status;
+};
