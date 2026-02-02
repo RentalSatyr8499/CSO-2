@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "toMeasure.h"
 
-const int NUM_ITERATIONS = 100;
+const int NUM_ITERATIONS = 1000;
 long long MEASUREMENT_OVERHEAD = 0; // set in main
 long long measureFunction(void (*setup)(), void (*fxn)()) {
     if (setup){
@@ -27,6 +27,7 @@ long long measureFunction(void (*setup)(), void (*fxn)()) {
 }
 
 int main(int argc, char* argv[]) {
+    MEASUREMENT_OVERHEAD = measureFunction(NULL, randomCall); // for some reason I've found that measureFunction needs to warm up first before measuring the actual overhead
     MEASUREMENT_OVERHEAD = measureFunction(NULL, baseTime);
     
     void (*scenarios[8][2])() = {
