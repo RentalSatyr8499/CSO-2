@@ -9,10 +9,10 @@
 void writeoutput(const char *command, const char *out_path, const char *err_path){
     pid_t p = fork();
     if (p == 0){
-        int out = open(out_path, O_WRONLY | O_CREAT | O_APPEND, 0);
+        int out = open(out_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
         dup2(out, STDOUT_FILENO);
         
-        int err = open(err_path, O_WRONLY | O_CREAT | O_APPEND);
+        int err = open(err_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
         dup2(err, STDERR_FILENO);
         
         execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
@@ -45,7 +45,7 @@ void parallelwriteoutput(int count, const char **argv_base, const char *out_path
 
     // step 2: run commands 
     int original_stdout = dup(STDOUT_FILENO); // redirect to out.txt
-    int out = open(out_path, O_WRONLY | O_CREAT | O_APPEND, 0);
+    int out = open(out_path, O_WRONLY | O_CREAT | O_APPEND, 0644);
     dup2(out, STDOUT_FILENO); 
     
     for (int j = 0; j < count; j++){ // run count children
