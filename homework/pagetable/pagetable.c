@@ -1,25 +1,28 @@
 #include "config.h"
 #include <stddef.h>
 #include "mlpt.h"
-
+#include <stdint.h>
 
 size_t translate(size_t va){
-    // mask off po
-    // traverse ptes
-    size_t ppn = traversePTEs(ptbr, va, 1);
-    // concatenate with offset
-    // access to get final value
+    size_t pageBase = traversePTEs(ptbr, va, 0);
+    size_t physicalAddress = (pageBase | ((1 << POBITS)-1) & va);
+    return  *(size_t *)physicalAddress;
 }
-size_t traversePTEs(size_t ppn, size_t vpn, int currLevel){
+size_t traversePTEs(size_t ppn, size_t va, int currLevel){
     size_t ptePtr = ppn;
-    ptePtr += (vpn >> POBITS + LEVELS - currLevel)*8; // 8-byte PTEs, uh vpn calculation is wrong
-    size_t pte = (int *)ptePtr; // this is wrong, pte needs to be cast to a pointer to an 8-byte value
 
-    if (pte & 1 != 1){ 
+    int shift = POBITS + (LEVELS - 1 - currLevel) * (POBITS - 3); // 8-byte PTEs, asssumes currLevel starts at 0
+    size_t mask = (1ULL << (POBITS - 3)) - 1;
+    size_t index = (va >> shift) & mask;
+    ptePtr += index * 8;
+
+    uint64_t pte = *((uint64_t *)ptePtr); 
+
+    if ((pte & 1) == 0){ 
         return -1;
-    } else if (currLevel = LEVELS){
+    } else if (currLevel + 1 == LEVELS){
         return ((pte >> POBITS) << POBITS);
     } else {
-        return traversePTEs(pte >> POBITS, vpn, currLevel + 1);
+        return traversePTEs(((pte >> POBITS) << POBITS), va, currLevel + 1);
     }
 }
