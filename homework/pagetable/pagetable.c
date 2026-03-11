@@ -3,21 +3,22 @@
 #include "mlpt.h"
 #include <stdint.h>
 
-size_t translate(size_t va){
-    size_t pageBase = traversePTEs(ptbr, va, 0);
-    size_t physicalAddress = (pageBase | ((1 << POBITS)-1) & va);
-    return  *(size_t *)physicalAddress;
-}
-size_t traversePTEs(size_t ppn, size_t va, int currLevel){
-    size_t ptePtr = ppn;
+size_t ptbr;
+
+uint64_t* getPTEptr(size_t ppn, size_t va, int currLevel){
+    uint64_t *ptePtr = ppn;
 
     int shift = POBITS + (LEVELS - 1 - currLevel) * (POBITS - 3); // 8-byte PTEs, asssumes currLevel starts at 0
     size_t mask = (1ULL << (POBITS - 3)) - 1;
     size_t index = (va >> shift) & mask;
-    ptePtr += index * 8;
+    ptePtr += index;
 
-    uint64_t pte = *((uint64_t *)ptePtr); 
+    return ptePtr; 
+}
 
+size_t traversePTEs(size_t ppn, size_t va, int currLevel){
+    uint64_t pte = *((uint64_t *)getPTEptr(ppn, va, currLevel)); 
+    
     if ((pte & 1) == 0){ 
         return -1;
     } else if (currLevel + 1 == LEVELS){
@@ -25,4 +26,52 @@ size_t traversePTEs(size_t ppn, size_t va, int currLevel){
     } else {
         return traversePTEs(((pte >> POBITS) << POBITS), va, currLevel + 1);
     }
+}
+
+size_t translate(size_t va){
+    if (ptbr == 0){
+        return -1;
+    } 
+
+    size_t pageBase = traversePTEs(ptbr, va, 0);
+    if (pageBase == -1){
+        return -1;
+    }
+    
+    size_t physicalAddress = (pageBase | (((1 << POBITS)-1) & va));
+    return physicalAddress;
+}
+
+void* initialize_page(){
+    void* x;
+    posix_memalign(&x, 1ULL << POBITS, 1ULL << POBITS); // 1ULL << POBITS gives 2^POBITS
+    return x;
+}
+void zero_validbits(size_t pa){
+    uint64_t currPTE;
+    for (int i = 0; i < (1ULL << (POBITS - 3)); i++){
+        *((uint64_t*)pa + i) = 0;
+    }
+}
+size_t traverseAndAllocate(size_t ppn, size_t va, int currLevel){
+    uint64_t *ptePtr = getPTEptr(ppn, va, currLevel);
+
+    if ((*ptePtr & 1) == 0){ 
+        *ptePtr = ((size_t) initialize_page()) | 1;
+        
+        if (currLevel + 1 == LEVELS){
+            return 1;
+        } else {
+            zero_validbits((*ptePtr >> POBITS) << POBITS);
+        }
+    } else if (currLevel + 1 == LEVELS){
+        return 0;
+    } 
+    return traverseAndAllocate(((*ptePtr >> POBITS) << POBITS), va, currLevel + 1);
+}
+int allocate_page(size_t start_va){
+    if ((start_va & (1ULL << POBITS)) != 0){
+        return -1;
+    }
+    return traverseAndAllocate(ptbr, start_va, 0);
 }
