@@ -1,0 +1,7 @@
+Three licenses I considered: 
+
+1. GPL: open-source, free for everyone to use. Has something called "strong copyleft", meaning anything using a GPL project as a dependency needs to be itself GPL. 
+2. LGPL ("lesser GPL"): similar to GPL, except it's that any modified versions of the project must remain open-source (not anything dependent on the project). 
+3. MIT: keep copyright and license notice; allows "proprietary use". Usually results in the widest adoption. 
+
+I chose the GPL license because open-source code is something that is very important in principle to me. I also don't expect this project to be used by anyone for commerical reasons in a way that will benefit me.

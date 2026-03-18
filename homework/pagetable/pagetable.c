@@ -50,10 +50,15 @@ size_t translate(size_t va){
 void* initialize_page(){
     void* x;
     posix_memalign(&x, 1ULL << POBITS, 1ULL << POBITS); // 1ULL << POBITS gives 2^POBITS
+    for (int i = 0; i < (1ULL << (POBITS - 3)); i++){
+        *((uint64_t*)x + i) = 0;
+    }
+    
     allocation_count++;
+
     return x;
 }
-void zero_validbits(size_t pa){
+void zero_memory(size_t pa){
     for (int i = 0; i < (1ULL << (POBITS - 3)); i++){
         *((uint64_t*)pa + i) = 0;
     }
@@ -63,11 +68,10 @@ size_t traverseAndAllocate(size_t ppn, size_t va, int currLevel){
 
     if ((*ptePtr & 1) == 0){ 
         *ptePtr = ((size_t) initialize_page()) | 1;
+        // zero_memory((*ptePtr >> POBITS) << POBITS);
         
         if (currLevel + 1 == LEVELS){
             return 1;
-        } else {
-            zero_validbits((*ptePtr >> POBITS) << POBITS);
         }
     } else if (currLevel + 1 == LEVELS){
         return 0;
@@ -75,12 +79,11 @@ size_t traverseAndAllocate(size_t ppn, size_t va, int currLevel){
     return traverseAndAllocate(((*ptePtr >> POBITS) << POBITS), va, currLevel + 1);
 }
 int allocate_page(size_t start_va){
-    if (ptbr == 0){
-        ptbr = (size_t) initialize_page();
-    }
-
     if (start_va & ((1ULL << POBITS) - 1)) {
         return -1;
+    }
+    if (ptbr == 0){
+        ptbr = (size_t) initialize_page();
     }
     return traverseAndAllocate(ptbr, start_va, 0);
 }
