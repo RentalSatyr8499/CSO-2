@@ -1,17 +1,15 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g 
 
-all: tester
+all: libmlpt.a
 
-tester: tester.o pagetable.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-
-tester.o: tester.c mlpt.h
-	$(CC) $(CFLAGS) -c $< -o $@
+libmlpt.a: pagetable.o
+	ar rcs libmlpt.a pagetable.o
 
 pagetable.o: pagetable.c mlpt.h config.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< $@
 
-clean:
-	rm -f tester.o pagetable.o tester
+clean: 
+	rm -f pagetable.o libmlpt.a
+
+.PHONY: all clean

@@ -31,4 +31,19 @@ size_t translate(size_t va);
  * setup, the function should not change pagetables.)
  */
 int allocate_page(size_t start_va);
+
+/**
+ * Deallocates the virtual page which starts at virtual address `start_va`
+ * (if it is not deallocated ready).
+ *
+ * If `start_va` is not the address at the start of a page, returns `-1`.
+ * If `start_va` is the address at the start of a page, but the
+ * page is already deallocated, returns `0`; otherwise, returns `1`.
+ *
+ * Any data page and page tables not yet deallocated will be
+ * deallocated using `free`.
+ * (If a deallocated entry is the last entry in that table, the table is 
+ * deallocated as well).
+ */
+int deallocate_page(size_t start_va);
 #endif

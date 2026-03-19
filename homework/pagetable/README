@@ -5,3 +5,10 @@
 * You can customize the multi-level page table using the two following settings in `config.h`:
     * `LEVELS`: chooses how many page tables the OS traverses through before reaching a physical page of data. If you know a lot of virtual memory will go unused, choose a high `LEVELS` value.
     * `POBITS`: chooses the number of bits used for the page offset. The more bits, the bigger each page is.
+
+# Proposed interface for deallocating pages
+* This library allows you to deallocate pages using the following method: `int deallocate_page(int start_va)`. 
+    * If `start_virtual_address` does not correspond to the beginning of a page, return `-1`.
+    * If `start_virtual_address` does not point to an allocated page, return `0`. 
+    * If the deallocation succeeds, return `1`.
+    * Any data page and page tables not yet deallocated will be deallocated using `free`. (If a deallocated entry is the last entry in that table, the table is deallocated as well).
