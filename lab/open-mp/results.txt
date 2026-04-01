@@ -1,0 +1,7 @@
+original function geomean(): 28302906 ns to process 6306696 characters: 4.75837
+even split + atomic update g1(): 235299451 ns to process 6306696 characters: 4.75837
+task queue + atomic update g2(): 529427384 ns to process 6306696 characters: 4.75837
+task queue with larger tasks + atomic update g3(): 20626135 ns to process 6306696 characters: 4.75837
+even split + reduction(op:) g4(): 16669396 ns to process 6306696 characters: 4.75837
+task queue with larger tasks + reduction(op:) g5(): 19407794 ns to process 6306696 characters: 4.75837
+even split + manual many-to-few g6(): 15577307 ns to process 6306696 characters: 4.75837
