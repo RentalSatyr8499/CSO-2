@@ -2,7 +2,6 @@
 #include "netsim.h"
 
 int next_sequence_num = 1;
-int total_sequence_count = 0;
 int current_timer_id = 0;
 char last_ack[5] = {0, 0, 1, 0, 0};
 
@@ -24,9 +23,15 @@ void new_ack(void* _data){
 }
 void send_ack(){
     send(5, last_ack);
-    if (next_sequence_num <= total_sequence_count) {
-        current_timer_id = setTimeout(send_ack, 1000, NULL);
+}
+int verify_packet(int len, void* _data){
+    char *data = _data;
+    char checksum = 0;
+    for (int i = 1; i < len; i++){
+        checksum ^= data[i];
     }
+
+    return (checksum == data[0]) ? 0 : -1;
 }
 void request_next(void* _data){
     new_ack((char *)_data);
@@ -38,9 +43,14 @@ void recvd(size_t len, void* _data) {
     char *data = _data;
 
     if (data[1] == next_sequence_num){
+        /*
+        if (verify_packet(len, data) == -1){
+            send_ack();
+            return;
+        }
+        */
         clearTimeout(current_timer_id);
         next_sequence_num += 1;
-        total_sequence_count = data[2];
 
         fwrite(data+3,1,len-3,stdout);
         fflush(stdout);
