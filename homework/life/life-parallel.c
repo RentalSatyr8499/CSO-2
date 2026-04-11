@@ -51,18 +51,18 @@ void simulate_life_parallel(int threads, LifeBoard *state, int steps) {
     pthread_t thread[threads];
     ThreadInfo info[threads];
 
-    int chunk_size = (state->height - 2) / threads;
-    for (int i = 0; i < threads; i++){
+    int total_rows = state->height - 2; 
+    for (int i = 0; i < threads; i++) {
         info[i] = (ThreadInfo){
             state,
             next_state,
             steps,
-            chunk_size*i, chunk_size*(i+1), // y_start and y_end
+            1 + (total_rows * i / threads),     // y_start
+            1 + (total_rows * (i + 1) / threads), // y_end
             &barrier
         };
     }
-    info[0].y_start = 1;
-    info[threads-1].y_end = state->height-2; // remainder goes to last thread
+    info[threads-1].y_end = state->height - 1;
 
     for (int i = 0; i < threads; i++){
         pthread_create(&thread[i], NULL, worker_thread, &info[i]);

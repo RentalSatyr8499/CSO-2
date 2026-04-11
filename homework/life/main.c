@@ -4,6 +4,8 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include <stdio.h>
+
 /** Global variables to manage wrapping functions without arguments */
 static LifeBoard *original_board;
 static LifeBoard *working_board;
@@ -96,6 +98,85 @@ char * pretty_number(uint64_t cycles) {
     return backing;
 }
 
+void handle_compare_gen(const char **argv){
+    int n = atoi(argv[1]);
+    const char *input_file = argv[2];
+
+    FILE *in = fopen(input_file, "r");
+    if (!in) {
+        fprintf(stderr, "ERROR: could not open input file \"%s\"\n", input_file);
+        return;
+    }
+
+    LifeBoard *original = LB_import(in);
+    fclose(in);
+    if (original->width <= 0 || original->height <= 0) {
+        fprintf(stderr, "ERROR: valid initial board not found in \"%s\"\n", input_file);
+        LB_del(original);
+        return;
+    }
+
+    FILE *out = fopen("compare-gen-output.txt", "w");
+    if (!out) {
+        fprintf(stderr, "ERROR: could not open output file \"compare-gen-output.txt\"\n");
+        LB_del(original);
+        return;
+    }
+
+    for (int g = 0; g <= n; g++) {
+
+        // fresh boards for this generation
+        LifeBoard *serial_board   = LB_clone(original);
+        LifeBoard *parallel_board = LB_clone(original);
+
+        // simulate up to generation g
+        simulate_life_serial(serial_board, g);
+        simulate_life_parallel(1, parallel_board, g);
+
+        // compare
+        if (!LB_equals(serial_board, parallel_board)) {
+            fprintf(out,
+                "aborted simulation to %dth generation; implementations diverged at generation %d\n",
+                n, g);
+
+            fprintf(out, "\n--- SERIAL BOARD AT GENERATION %d ---\n", g);
+            LB_display(serial_board, out);
+
+            fprintf(out, "\n--- PARALLEL BOARD AT GENERATION %d ---\n", g);
+            LB_display(parallel_board, out);
+
+            LB_del(serial_board);
+            LB_del(parallel_board);
+            LB_del(original);
+            fclose(out);
+            return;
+        }
+
+        LB_del(serial_board);
+        LB_del(parallel_board);
+    }
+
+    // if we reach here, no divergence
+    fprintf(out, "outputs matched up to generation %d\n", n);
+
+    // print final boards
+    LifeBoard *serial_final   = LB_clone(original);
+    LifeBoard *parallel_final = LB_clone(original);
+
+    simulate_life_serial(serial_final, n);
+    simulate_life_parallel(1, parallel_final, n);
+
+    fprintf(out, "\n--- SERIAL BOARD AT GENERATION %d ---\n", n);
+    LB_display(serial_final, out);
+
+    fprintf(out, "\n--- PARALLEL BOARD AT GENERATION %d ---\n", n);
+    LB_display(parallel_final, out);
+
+    LB_del(serial_final);
+    LB_del(parallel_final);
+    LB_del(original);
+    fclose(out);
+}
 
 int main(int argc, const char **argv) {
     // parse command-line options
@@ -114,6 +195,9 @@ int main(int argc, const char **argv) {
             show_result = 1;
             show_result_on_error = 1;
             do_timings = 1;
+        } else if (strcmp(argv[3], "compare-gen") == 0) {
+            handle_compare_gen(argv);
+            return 0;
         }
     }
     
