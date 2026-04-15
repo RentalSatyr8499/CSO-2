@@ -41,24 +41,23 @@ void forward_attack_2(struct message *message) {
 /* forward function for "attack 3" case.
    change this code to implement your attack
  */
-struct message *messages_3[3];
+struct message *message_buffer;
 int messages_3_counter = 0;
 void forward_attack_3_helper(struct message *message){
-    if (messages_3_counter < 3) {
-        messages_3[messages_3_counter] = malloc(sizeof(struct message));
-        memcpy(messages_3[messages_3_counter], message, sizeof(struct message));
-        messages_3_counter ++;
-        
-    } else {
-        send_message(messages_3[2]);
-        send_message(messages_3[1]);
-        send_message(messages_3[2]);
+    if (messages_3_counter < 2) {
+        if (messages_3_counter == 1){
+            message_buffer = malloc(sizeof(struct message));
+            memcpy(message_buffer, message, sizeof(struct message));
+        }
+        send_message(message);
+        messages_3_counter ++;        
+    } else if (messages_3_counter == 2){
+        send_message(message_buffer);
     }
 }
 void forward_attack_3(struct message *message) {
     if (message->from == 'A'){
         forward_attack_3_helper(message);
-        tiny_sleep(1000000);
     } else {
         send_message(message);
     }
